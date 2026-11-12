@@ -1,0 +1,33 @@
+# Quality gate: every pull request and every push to main must pass
+# typecheck and tests. To block merges, mark the "gate" check as required
+# in the repo's branch protection for main.
+name: gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
